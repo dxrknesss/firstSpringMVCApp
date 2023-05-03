@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:custom="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Person page!</title>
+    <link rel="stylesheet" th:href="@{../../../../resources/css/buttons.css}">
+    <link rel="stylesheet" th:href="@{../../../../resources/css/show.css}">
+</head>
+<body>
+<div>
+    <div id="info">
+        <div>
+            <div>
+                <img th:src="@{../../../../resources/images/pfp/0.jpg}"
+                     width="180" height="180"
+                     alt="user's profile picture">
+                <div>
+                    id:
+                    <span th:text="${person.getId()}"></span>
+
+                </div>
+                <br>
+                <div>
+                    name:
+                    <span th:text="${person.getName()}"></span>
+
+                </div>
+                <br>
+                <div>
+                    age:
+                    <span th:text="${person.getAge()}"></span>
+
+                </div>
+                <br>
+                <div>
+                    email:
+                    <span th:text="${person.getEmail()}"></span>
+                </div>
+                <br>
+            </div>
+        </div>
+
+        <div>
+            <div th:if="${friends.size() > 0}">
+                Friend list:
+            </div>
+
+            <div th:if="${friends.size() > 0}"
+                 th:each="friend : ${friends}">
+                <a th:href="@{/people/{id}(id=${friend.getId()})}"
+                   th:text="${friend.getName()} + ', ' + ${friend.getAge()}">user</a>
+                <form style="display: inline-block"
+                      th:method="DELETE"
+                      th:action="@{/people/{id}/addFriend(id=${person.getId()}, friendId=${friend.getId()})}">
+                    &emsp;
+                    <a th:href="@{/people/{id}(id=${person.getId()})}"
+                       onclick="this.closest('form').submit();return false;">(Delete friend)</a>
+                </form>
+                <br>
+            </div>
+        </div>
+    </div>
+
+    <div th:if="${availableFriends.size() != 0}">
+        <br>
+        <form th:method="PATCH" th:action="@{/people/{id}/addFriend(id=${person.getId()})}">
+            <div id="labelFriend">
+                <label for="addFriend">Add friend: </label>
+                <select class="custom-select" th:object="${friend}" th:field="*{id}" id="addFriend">
+                    <option th:each="friend : ${availableFriends}" th:value="${friend.getId()}"
+                            th:text="${friend.getName()}"></option>
+                </select>
+            </div>
+
+            <br>
+            <input class="button-3" type="submit" value="Add new buddy!">
+        </form>
+    </div>
+
+    <br>
+    <a class="button-30" role="button" th:href="@{/people/{id}/edit(id=${person.getId()})}">Edit this person</a>
+
+    <form th:method="DELETE" th:action="@{/people/{id}(id=${person.getId()})}">
+        <br>
+        <input class="button-24" type="submit" value="Delete person">
+    </form>
+</div>
+
+<hr>
+<a th:href="@{/people}" class="button-13" role="button">go back</a>
+</body>
+</html>

@@ -1,0 +1,43 @@
+div {
+    font-size: 19px;
+}
+
+span {
+    font-style: italic;
+}
+
+#info {
+    display: grid;
+    justify-content: space-around;
+    text-align: center;
+}
+
+#labelFriend {
+    display: flex;
+    flex-direction: column;
+    width: fit-content;
+    margin: auto;
+    text-align: center
+}
+
+.custom-select {
+    appearance: auto;
+    height: 57px;
+    padding: 10px 38px 10px 16px;
+    background-size: 10px;
+    transition: border-color .1s ease-in-out,box-shadow .1s ease-in-out;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+}
+.custom-select:hover {
+    border: 1px solid #999;
+}
+.custom-select:focus {
+    border: 1px solid #999;
+    box-shadow: 0 3px 5px 0 rgba(0,0,0,.2);
+    outline: none;
+}
+.custom-select {
+    font-family: "Source Sans Pro", sans-serif;
+    font-size: 19px;
+}
