@@ -1,8 +1,7 @@
 package com.firstspringmvcapp.controllers;
 
-import com.firstspringmvcapp.dao.IndexState;
-import com.firstspringmvcapp.dao.PersonDAO;
 import com.firstspringmvcapp.models.Person;
+import com.firstspringmvcapp.services.PeopleService;
 import com.firstspringmvcapp.util.PersonValidator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -15,30 +14,29 @@ import javax.validation.Valid;
 @Controller
 @RequestMapping("/people")
 public class PeopleController {
-    private final PersonDAO personDAO;
+    private final PeopleService peopleService;
     private final PersonValidator personValidator;
 
     @Autowired
-    public PeopleController(PersonDAO personDAO, PersonValidator personValidator) {
-        this.personDAO = personDAO;
+    public PeopleController(PeopleService peopleService, PersonValidator personValidator) {
+        this.peopleService = peopleService;
         this.personValidator = personValidator;
     }
 
-
     @GetMapping()
     public String index(Model model) {
-        // receive all people from DAO and send them to view
-        model.addAttribute("people", personDAO.index(IndexState.WITH, 0));
+        model.addAttribute("people", peopleService.findAll());
         return "people/index";
     }
 
     @GetMapping("/{id}")
     public String show(@PathVariable("id") int id, Model model,
                        @ModelAttribute("friend") Person friend) {
-        // receive one person by id and send it to view
-        model.addAttribute("person", personDAO.show(id));
-        model.addAttribute("friends", personDAO.getFriends(id));
-        model.addAttribute("availableFriends", personDAO.index(IndexState.WITHOUT, id));
+        Person person = peopleService.findOne(id);
+
+        model.addAttribute("person", person);
+        model.addAttribute("friends", peopleService.findFriends(id));
+        model.addAttribute("availableFriends", peopleService.findAvailableFriends(id));
         return "people/show";
     }
 
@@ -52,48 +50,47 @@ public class PeopleController {
                                BindingResult bindingResult) {
         personValidator.validate(person, bindingResult);
 
-        if(bindingResult.hasErrors()) {
+        if (bindingResult.hasErrors()) {
             return "people/new";
         }
 
-        personDAO.save(person);
+        peopleService.save(person);
         return "redirect:/people";
     }
 
     @GetMapping("/{id}/edit")
     public String editPerson(Model model, @PathVariable("id") int id) {
-        model.addAttribute("person", personDAO.show(id));
+        model.addAttribute("person", peopleService.findOne(id));
 
         return "people/edit";
     }
 
     @PatchMapping("/{id}")
-    public String updatePerson(@ModelAttribute("person") @Valid Person person,
-                               BindingResult bindingResult,
+    public String updatePerson(@ModelAttribute("person") @Valid Person person, BindingResult bindingResult,
                                @PathVariable("id") int id) {
         if (bindingResult.hasErrors()) {
             return "people/edit";
         }
 
-        personDAO.update(id, person);
+        peopleService.update(id, person);
         return "redirect:/people";
     }
 
     @DeleteMapping("/{id}")
     public String deletePerson(@PathVariable("id") int id) {
-        personDAO.delete(id);
+        peopleService.delete(id);
         return "redirect:/people";
     }
 
     @PatchMapping("/{id}/addFriend")
-    public String addFriend(@PathVariable("id") int id, @ModelAttribute("friend") Person friend) {
-        personDAO.addFriend(id, friend.getId());
+    public String addFriend(@PathVariable("id") int personId, @ModelAttribute("friend") Person friend) {
+        peopleService.addFriendById(personId, friend.getId());
         return "redirect:/people/{id}";
     }
 
     @DeleteMapping("/{id}/addFriend")
-    public String deleteFriend(@PathVariable("id") int id, @RequestParam("friendId") int friendId) {
-        personDAO.removeFriend(id, friendId);
+    public String deleteFriend(@PathVariable("id") int personId, @RequestParam("friendId") int friendId) {
+        peopleService.removeFriendById(personId, friendId);
         return "redirect:/people/{id}";
     }
 }
