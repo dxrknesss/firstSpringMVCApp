@@ -7,6 +7,7 @@ import lombok.Setter;
 
 import javax.persistence.*;
 import javax.validation.constraints.*;
+import java.io.File;
 import java.util.List;
 
 @Getter
@@ -33,6 +34,7 @@ public class Person {
 
     @NotEmpty(message = "Email should not be empty!")
     @Email(message = "You're not even trying... Enter valid email!")
+    @Pattern(regexp = "^(?=.{1,64}@)[A-Za-z0-9_-]+(\\.[A-Za-z0-9_-]+)*@[^-][A-Za-z0-9-]+(\\.[A-Za-z0-9-]+)*(\\.[A-Za-z]{2,})$")
     @Column(name = "email")
     private String email;
 
@@ -48,6 +50,9 @@ public class Person {
             inverseJoinColumns = @JoinColumn(name = "person_id"))
     private List<Person> friendOf;
 
+    @Column(name = "pfp_path")
+    private String profilePicturePath;
+
     public Person(int age, String name, String email) {
         this.age = age;
         this.name = name;
@@ -62,5 +67,9 @@ public class Person {
                 ", name='" + name + '\'' +
                 ", email='" + email + '\'' +
                 '}';
+    }
+
+    public boolean profilePictureExists() {
+        return new File("C:\\Programs\\java_projects\\FirstSpringMVCApp\\src\\main\\resources\\images\\pfp\\" + this.getId() + ".png").exists();
     }
 }

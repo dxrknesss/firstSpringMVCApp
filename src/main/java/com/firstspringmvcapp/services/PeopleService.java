@@ -6,7 +6,14 @@ import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.commons.CommonsMultipartFile;
 
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpSession;
+import java.io.*;
+import java.net.MalformedURLException;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -21,7 +28,10 @@ public class PeopleService {
     }
 
     public List<Person> findAll() {
-        return peopleRepository.findAll();
+        List<Person> people = peopleRepository.findAll().stream().sorted(
+                (p1, p2) -> p1.getName().compareToIgnoreCase(p2.getName())
+        ).collect(Collectors.toList());
+        return people;
     }
 
     public Person findOne(int id) {
@@ -53,23 +63,38 @@ public class PeopleService {
                 .collect(Collectors.toList());
         availableFriendsIds.add(id);
 
-        return peopleRepository.findByIdNotIn(availableFriendsIds);
+
+        return peopleRepository.findByIdNotIn(availableFriendsIds).stream().sorted(
+                (p1, p2) -> p1.getName().compareToIgnoreCase(p2.getName())
+        ).collect(Collectors.toList());
     }
 
     @Transactional
     public void save(Person person) {
+        person.setProfilePicturePath("0.png");
         peopleRepository.save(person);
+        System.out.println("person " + person + "was successfully created");
     }
 
     @Transactional
     public void update(int id, Person newPerson) {
+        final Person person = peopleRepository.getOne(id);
         newPerson.setId(id);
+        newPerson.setProfilePicturePath(person.getProfilePicturePath());
+        newPerson.setFriends(person.getFriends());
+        newPerson.setFriendOf(person.getFriendOf());
         peopleRepository.save(newPerson);
+        System.out.println("person " + person + "was successfully changed to " + newPerson);
     }
 
     @Transactional
     public void delete(int id) {
+        final Person toBeDeleted = peopleRepository.getOne(id);
         peopleRepository.deleteById(id);
+        File pfp = new File(
+                "C:\\Programs\\java_projects\\FirstSpringMVCApp\\src\\main\\resources\\images\\pfp\\" + id + ".png");
+        pfp.delete();
+        System.out.println("person " + toBeDeleted + "was successfully deleted");
     }
 
     @Transactional
@@ -87,5 +112,33 @@ public class PeopleService {
 
         person.getFriends().remove(friend);
         friend.getFriends().remove(person);
+    }
+
+    @Transactional
+    public void uploadProfilePicture(HttpSession session, CommonsMultipartFile file, int personId) {
+        ServletContext servletContext = session.getServletContext();
+        String path = servletContext.getRealPath("/images/pfp");
+        path = path.replace("FirstSpringMVCApp\\target\\FirstSpringMVCApp\\",
+                "FirstSpringMVCApp\\src\\main\\resources\\");
+        String filename = file.getOriginalFilename();
+
+        System.out.println(path + " " + filename);
+        System.out.println(path + "\\" + personId + ".png");
+        if (file.isEmpty() || !(filename != null && (filename.endsWith(".png") || filename.endsWith(".jpg")))) {
+            System.out.println("Your file should be valid .png image!");
+            return;
+        }
+
+        try (BufferedOutputStream bout = new BufferedOutputStream(
+                new FileOutputStream(path + "\\" + personId + ".png"))) {
+            bout.write(file.getBytes());
+            bout.flush();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        peopleRepository.getOne(personId).setProfilePicturePath(personId + ".png");
     }
 }

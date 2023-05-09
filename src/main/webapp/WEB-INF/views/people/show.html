@@ -6,31 +6,57 @@
     <title>Person page!</title>
     <link rel="stylesheet" th:href="@{../../../../resources/css/buttons.css}">
     <link rel="stylesheet" th:href="@{../../../../resources/css/show.css}">
+    <script>
+        function validate() {
+            let re = /(\.jpg|\.png|\.JPG|\.PNG)$/i;
+            let fname = document.getElementById("fileToUpload").value.toLowerCase();
+            if (!re.exec(fname)) {
+                alert("Your file should be a valid .png or .jpg image!");
+                return false;
+            }
+            return true;
+        }
+    </script>
 </head>
 <body>
 <div>
     <div id="info">
         <div>
             <div>
-                <img th:src="@{../../../../resources/images/pfp/0.jpg}"
-                     width="180" height="180"
+                <img th:if="${person.profilePictureExists()}"
+                     th:src="@{../../../../resources/images/pfp/{pfp}(pfp=${person.getProfilePicturePath()})}"
+                     width="360" height="360"
                      alt="user's profile picture">
+                <img th:unless="${person.profilePictureExists()}"
+                     th:src="@{../../../../resources/images/pfp/0.png}"
+                     width="360" height="360"
+                     alt="user's profile picture">
+                <div>
+                    <div>
+                        <form th:method="POST" th:action="@{/people/{id}/uploadForm(id=${person.getId()})}"
+                              enctype="multipart/form-data"
+                              onsubmit="return validate(this);">
+                            <label for="fileToUpload">change avatar</label>
+                            <br>
+                            <input name="file" id="fileToUpload" type="file" style="display: inline-block"/>
+                            <input type="submit" value="Upload" style="display: inline-block">
+                        </form>
+                    </div>
+                </div>
+                <br>
                 <div>
                     id:
                     <span th:text="${person.getId()}"></span>
-
                 </div>
                 <br>
                 <div>
                     name:
                     <span th:text="${person.getName()}"></span>
-
                 </div>
                 <br>
                 <div>
                     age:
                     <span th:text="${person.getAge()}"></span>
-
                 </div>
                 <br>
                 <div>
@@ -85,6 +111,8 @@
         <br>
         <input class="button-24" type="submit" value="Delete person">
     </form>
+
+
 </div>
 
 <hr>

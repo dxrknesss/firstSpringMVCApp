@@ -8,7 +8,10 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.commons.CommonsMultipartFile;
 
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import javax.validation.Valid;
 
 @Controller
@@ -31,7 +34,13 @@ public class PeopleController {
 
     @GetMapping("/{id}")
     public String show(@PathVariable("id") int id, Model model,
-                       @ModelAttribute("friend") Person friend) {
+                       @ModelAttribute("friend") Person friend,
+                       HttpServletResponse servletResponse) {
+        servletResponse.addHeader("Pragma-directive", "no-cache");
+        servletResponse.addHeader("Cache-directive", "no-cache");
+        servletResponse.addHeader("Cache-control", "no-cache");
+        servletResponse.addHeader("Pragma", "no-cache");
+        servletResponse.addHeader("Expires", "0");
         Person person = peopleService.findOne(id);
 
         model.addAttribute("person", person);
@@ -91,6 +100,15 @@ public class PeopleController {
     @DeleteMapping("/{id}/addFriend")
     public String deleteFriend(@PathVariable("id") int personId, @RequestParam("friendId") int friendId) {
         peopleService.removeFriendById(personId, friendId);
+        return "redirect:/people/{id}";
+    }
+
+    @PostMapping("/{id}/uploadForm")
+    public String uploadProfilePicture(@PathVariable("id") int personId,
+                                       @RequestParam CommonsMultipartFile file,
+                                       HttpSession session) {
+        peopleService.uploadProfilePicture(session, file, personId);
+
         return "redirect:/people/{id}";
     }
 }
