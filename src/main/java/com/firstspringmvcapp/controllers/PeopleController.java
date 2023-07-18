@@ -1,18 +1,21 @@
 package com.firstspringmvcapp.controllers;
 
-import com.firstspringmvcapp.models.Person;
-import com.firstspringmvcapp.services.PeopleService;
-import com.firstspringmvcapp.util.PersonValidator;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.commons.CommonsMultipartFile;
-
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import javax.validation.Valid;
+import org.springframework.web.multipart.MultipartFile;
+import com.firstspringmvcapp.models.Person;
+import com.firstspringmvcapp.services.PeopleService;
+import com.firstspringmvcapp.util.MinioFileHandler;
+import com.firstspringmvcapp.util.PersonErrorResponse;
+import com.firstspringmvcapp.util.PersonNotFoundException;
+import com.firstspringmvcapp.util.PersonValidator;
 
 @Controller
 @RequestMapping("/people")
@@ -46,6 +49,7 @@ public class PeopleController {
         model.addAttribute("person", person);
         model.addAttribute("friends", peopleService.findFriends(id));
         model.addAttribute("availableFriends", peopleService.findAvailableFriends(id));
+        model.addAttribute("profilePictureExists", MinioFileHandler.checkExistence("picture-bucket", id + ".png"));
         return "people/show";
     }
 
@@ -105,10 +109,18 @@ public class PeopleController {
 
     @PostMapping("/{id}/uploadForm")
     public String uploadProfilePicture(@PathVariable("id") int personId,
-                                       @RequestParam CommonsMultipartFile file,
-                                       HttpSession session) {
-        peopleService.uploadProfilePicture(session, file, personId);
+                                       @RequestParam MultipartFile file) {
+        peopleService.uploadProfilePicture(file, personId);
 
         return "redirect:/people/{id}";
+    }
+
+    @ExceptionHandler
+    private ResponseEntity<PersonErrorResponse> handleException(PersonNotFoundException e) {
+        PersonErrorResponse response = new PersonErrorResponse(
+                "Person with this id wasn't found!", System.currentTimeMillis()
+        );
+
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
 }

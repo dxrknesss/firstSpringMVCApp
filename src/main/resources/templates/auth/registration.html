@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign up page</title>
+    <link rel="stylesheet" th:href="@{/css/buttons.css}">
+    <link rel="stylesheet" th:href="@{/css/new_edit.css}">
+    <script th:src="@{/js/functions.js}"></script>
+</head>
+<body>
+
+<form
+        name="form"
+        th:method="POST"
+        th:action="@{/auth/registration}"
+        th:object="${personDTO}">
+    <label for="username">Name</label>
+    <input type="text" th:field="*{name}" th:placeholder="Name" id="username">
+    <div style="color:red" th:if="${#fields.hasErrors('name')}" th:errors="*{name}">NAME_ERR</div>
+
+    <br>
+    <label for="age">Age</label>
+    <input type="text" th:field="*{age}" th:placeholder="Age" id="age" name="fage1">
+    <div style="color:red" th:if="${#fields.hasErrors('age')}" th:errors="*{age}">AGE_ERR</div>
+
+    <br>
+    <label for="email">Email</label>
+    <input type="text" th:field="*{email}" th:placeholder="Email" id="email">
+    <div style="color:red" th:if="${#fields.hasErrors('email')}" th:errors="*{email}">EMAIL_ERR</div>
+
+    <br>
+    <label for="password">Password</label>
+    <input type="password" th:field="*{password}" th:placeholder="Secret123" id="password">
+
+    <br>
+    <input class="button-17" type="submit" value="Sign up!" onclick="validateFormAge()">
+</form>
+
+<hr>
+<a class="button-13" role="button" th:href="@{/templates/people}">go back</a>
+
+</body>
+</html>

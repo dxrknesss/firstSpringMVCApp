@@ -1,14 +1,14 @@
 package com.firstspringmvcapp.models;
 
+import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import javax.persistence.*;
-import javax.validation.constraints.*;
-import java.io.File;
-import java.util.List;
+import java.time.LocalDateTime;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -42,16 +42,25 @@ public class Person {
     @JoinTable(name = "person_friend",
             joinColumns = @JoinColumn(name = "person_id"),
             inverseJoinColumns = @JoinColumn(name = "friend_id"))
-    private List<Person> friends;
+    private Set<Person> friends;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "person_friend",
             joinColumns = @JoinColumn(name = "friend_id"),
             inverseJoinColumns = @JoinColumn(name = "person_id"))
-    private List<Person> friendOf;
+    private Set<Person> friendOf;
 
     @Column(name = "pfp_path")
     private String profilePicturePath;
+
+    @Column(name = "role")
+    private String role;
+
+    @Column(name = "password")
+    private String password;
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
 
     public Person(int age, String name, String email) {
         this.age = age;
@@ -67,9 +76,5 @@ public class Person {
                 ", name='" + name + '\'' +
                 ", email='" + email + '\'' +
                 '}';
-    }
-
-    public boolean profilePictureExists() {
-        return new File("C:\\Programs\\java_projects\\FirstSpringMVCApp\\src\\main\\resources\\images\\pfp\\" + this.getId() + ".png").exists();
     }
 }

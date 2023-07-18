@@ -1,11 +1,11 @@
 package com.firstspringmvcapp.util;
 
-import com.firstspringmvcapp.models.Person;
-import com.firstspringmvcapp.services.PeopleService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
+import com.firstspringmvcapp.models.Person;
+import com.firstspringmvcapp.services.PeopleService;
 
 @Component
 public class PersonValidator implements Validator {
@@ -24,10 +24,16 @@ public class PersonValidator implements Validator {
 
     @Override
     public void validate(Object o, Errors errors) {
-        Person person = (Person) o;
+        Person person = null;
+        try {
+            person = (Person) o;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
-        if (peopleService.findByName(person.getName()) != null) {
-            errors.rejectValue("name", "", "This name is already taken!");
+        if (peopleService.findByEmail(person.getEmail()) != null) {
+            System.out.println("Error is in the email!");
+            errors.rejectValue("email", "", "This email is already taken!");
         }
     }
 }

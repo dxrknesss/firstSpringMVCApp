@@ -4,31 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Person page!</title>
-    <link rel="stylesheet" th:href="@{../../../../resources/css/buttons.css}">
-    <link rel="stylesheet" th:href="@{../../../../resources/css/show.css}">
-    <script>
-        function validate() {
-            let re = /(\.jpg|\.png|\.JPG|\.PNG)$/i;
-            let fname = document.getElementById("fileToUpload").value.toLowerCase();
-            if (!re.exec(fname)) {
-                alert("Your file should be a valid .png or .jpg image!");
-                return false;
-            }
-            return true;
-        }
-    </script>
+    <link rel="stylesheet" th:href="@{/css/buttons.css}">
+    <link rel="stylesheet" th:href="@{/css/show.css}">
+    <script th:src="@{/js/functions.js}"></script>
 </head>
 <body>
 <div>
     <div id="info">
         <div>
             <div>
-                <img th:if="${person.profilePictureExists()}"
-                     th:src="@{../../../../resources/images/pfp/{pfp}(pfp=${person.getProfilePicturePath()})}"
+                <img th:if="${profilePictureExists}"
+                     th:src="@{//localhost:9000/picture-bucket/{id}.png(id=${person.getId()})}"
                      width="360" height="360"
                      alt="user's profile picture">
-                <img th:unless="${person.profilePictureExists()}"
-                     th:src="@{../../../../resources/images/pfp/0.png}"
+                <img th:unless="${profilePictureExists}"
+                     th:src="@{/pfp/0.png}"
                      width="360" height="360"
                      alt="user's profile picture">
                 <div>
@@ -107,7 +97,9 @@
     <br>
     <a class="button-30" role="button" th:href="@{/people/{id}/edit(id=${person.getId()})}">Edit this person</a>
 
-    <form th:method="DELETE" th:action="@{/people/{id}(id=${person.getId()})}">
+    <form th:method="DELETE" th:action="@{/people/{id}(id=${person.getId()})}"
+          onsubmit="alert('Currently only admin can delete people!'); return false;">
+<!--        todo - make this working -->
         <br>
         <input class="button-24" type="submit" value="Delete person">
     </form>

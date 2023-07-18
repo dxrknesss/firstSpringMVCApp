@@ -1,5 +1,9 @@
-/.idea/
+.idea
+*.iws
+*.iml
+*.ipr
 /target/
-/src/main/resources/database.properties
-/src/main/resources/hibernate.properties
 /src/main/resources/images/
+/main/resources/application.properties
+/docker_data/minio/*
+/docker_data/postgres/*

@@ -1,30 +1,34 @@
 package com.firstspringmvcapp.services;
 
-import com.firstspringmvcapp.models.Person;
-import com.firstspringmvcapp.repositories.PeopleRepository;
 import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.multipart.commons.CommonsMultipartFile;
+import com.firstspringmvcapp.models.Person;
+import com.firstspringmvcapp.repositories.PeopleRepository;
+import com.firstspringmvcapp.util.MinioFileHandler;
+import com.firstspringmvcapp.util.PersonNotFoundException;
 
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpSession;
-import java.io.*;
-import java.net.MalformedURLException;
-import java.util.Comparator;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
 public class PeopleService {
     private final PeopleRepository peopleRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public PeopleService(PeopleRepository peopleRepository) {
+    public PeopleService(PeopleRepository peopleRepository, PasswordEncoder passwordEncoder) {
         this.peopleRepository = peopleRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public List<Person> findAll() {
@@ -35,22 +39,21 @@ public class PeopleService {
     }
 
     public Person findOne(int id) {
-        return peopleRepository.findById(id).orElse(null);
+        return peopleRepository.findById(id).orElseThrow(PersonNotFoundException::new);
     }
 
-    public Person findByName(String name) {
-        return peopleRepository.findByName(name).orElse(null);
+    public Person findByEmail(String email) {
+        return peopleRepository.findByEmail(email).orElse(null);
     }
 
-    //@Transactional
-    public List<Person> findFriends(int id) {
+    public Set<Person> findFriends(int id) {
         Person person = peopleRepository.getOne(id);
 
         Hibernate.initialize(person.getFriends());
         Hibernate.initialize(person.getFriendOf());
 
-        List<Person> friendList = person.getFriends();
-        List<Person> friendsOf = person.getFriendOf();
+        Set<Person> friendList = person.getFriends();
+        Set<Person> friendsOf = person.getFriendOf();
 
         friendList.addAll(friendsOf);
         return friendList;
@@ -63,7 +66,6 @@ public class PeopleService {
                 .collect(Collectors.toList());
         availableFriendsIds.add(id);
 
-
         return peopleRepository.findByIdNotIn(availableFriendsIds).stream().sorted(
                 (p1, p2) -> p1.getName().compareToIgnoreCase(p2.getName())
         ).collect(Collectors.toList());
@@ -71,8 +73,9 @@ public class PeopleService {
 
     @Transactional
     public void save(Person person) {
-        person.setProfilePicturePath("0.png");
+        enrichPerson(person);
         peopleRepository.save(person);
+
         System.out.println("person " + person + "was successfully created");
     }
 
@@ -84,16 +87,17 @@ public class PeopleService {
         newPerson.setFriends(person.getFriends());
         newPerson.setFriendOf(person.getFriendOf());
         peopleRepository.save(newPerson);
+
         System.out.println("person " + person + "was successfully changed to " + newPerson);
     }
 
     @Transactional
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public void delete(int id) {
         final Person toBeDeleted = peopleRepository.getOne(id);
         peopleRepository.deleteById(id);
-        File pfp = new File(
-                "C:\\Programs\\java_projects\\FirstSpringMVCApp\\src\\main\\resources\\images\\pfp\\" + id + ".png");
-        pfp.delete();
+        MinioFileHandler.remove("picture-bucket", id + ".png");
+
         System.out.println("person " + toBeDeleted + "was successfully deleted");
     }
 
@@ -115,30 +119,24 @@ public class PeopleService {
     }
 
     @Transactional
-    public void uploadProfilePicture(HttpSession session, CommonsMultipartFile file, int personId) {
-        ServletContext servletContext = session.getServletContext();
-        String path = servletContext.getRealPath("/images/pfp");
-        path = path.replace("FirstSpringMVCApp\\target\\FirstSpringMVCApp\\",
-                "FirstSpringMVCApp\\src\\main\\resources\\");
-        String filename = file.getOriginalFilename();
-
-        System.out.println(path + " " + filename);
-        System.out.println(path + "\\" + personId + ".png");
-        if (file.isEmpty() || !(filename != null && (filename.endsWith(".png") || filename.endsWith(".jpg")))) {
-            System.out.println("Your file should be valid .png image!");
-            return;
-        }
-
-        try (BufferedOutputStream bout = new BufferedOutputStream(
-                new FileOutputStream(path + "\\" + personId + ".png"))) {
-            bout.write(file.getBytes());
-            bout.flush();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
+    public void uploadProfilePicture(MultipartFile file, int personId) {
+        try {
+            ByteArrayInputStream bais = new ByteArrayInputStream(file.getBytes());
+            MinioFileHandler.upload("picture-bucket", personId + ".png", bais);
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        peopleRepository.getOne(personId).setProfilePicturePath(personId + ".png");
+        Person updatedPerson = peopleRepository.getOne(personId);
+        if (!updatedPerson.getProfilePicturePath().equals(personId + ".png")) {
+            updatedPerson.setProfilePicturePath(personId + ".png");
+        }
+    }
+
+    private void enrichPerson(Person person) {
+        person.setProfilePicturePath("0.png");
+        person.setRole("ROLE_USER");
+        person.setPassword(passwordEncoder.encode(person.getPassword()));
+        person.setCreatedAt(LocalDateTime.now());
     }
 }
