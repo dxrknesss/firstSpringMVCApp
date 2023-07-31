@@ -6,9 +6,9 @@
 * You can use this app as **REST API** by accessing ``/api`` pages!
 
 ## Table of Contents
-* [Installation](#Installation)
-* [API](#API)
-* [Future plans](#Future plans)
+* [Installation](#installation)
+* [API](#api)
+* [Future plans](#future-plans)
 
 ## Installation
 First, you'll need to build the project.
