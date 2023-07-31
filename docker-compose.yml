@@ -1,0 +1,30 @@
+version: '3'
+
+services:
+  postgres:
+    image: postgres:alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+    volumes:
+      - ./docker_data/postgres/:/var/lib/postgresql/data
+  java-app:
+    build: .
+    ports:
+      - "8080:8080"
+  minio-ser:
+    container_name: minio-s
+    environment:
+      - MINIO_ROOT_USER=minio-root-user
+      - MINIO_ROOT_PASSWORD=minio-root-password
+    image: bitnami/minio
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    volumes:
+      - ./docker_data/minio/:/data
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - '8888:8080'

@@ -1,6 +1,7 @@
 package com.firstspringmvcapp.util;
 
-import com.firstspringmvcapp.models.Person;
+import com.firstspringmvcapp.dto.UserDto;
+import com.firstspringmvcapp.models.User;
 import com.firstspringmvcapp.services.PeopleService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -19,15 +20,15 @@ public class PersonValidator implements Validator {
 
     @Override
     public boolean supports(Class<?> aClass) {
-        return Person.class.equals(aClass);
+        return User.class.equals(aClass);
     }
 
     @Override
     public void validate(Object o, Errors errors) {
-        Person person = (Person) o;
+        UserDto user = (UserDto) o;
 
-        if (peopleService.findByName(person.getName()) != null) {
-            errors.rejectValue("name", "", "This name is already taken!");
+        if (peopleService.findByEmail(user.getEmail()).isPresent()) {
+            errors.rejectValue("email", "", "This email is already taken!");
         }
     }
 }
