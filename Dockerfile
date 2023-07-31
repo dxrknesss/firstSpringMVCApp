@@ -1,9 +1,9 @@
 FROM amazoncorretto:20
 
-EXPOSE 7070
-
 WORKDIR /app
 
-COPY ./target/*.jar .
+COPY . .
 
-ENTRYPOINT ["java", "-jar", "first-mvc-app.jar"]
+RUN ["./mvnw", "clean", "install"]
+
+ENTRYPOINT ["java", "-jar", "target/first-mvc-app.jar"]

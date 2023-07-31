@@ -6,7 +6,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class PersonDTO {
+public class UserDto {
     @Min(value = 1, message = "Age should be greater than 0")
     @Max(value = 110, message = "Aren't you a bit too old to use the internet?")
     private int age;

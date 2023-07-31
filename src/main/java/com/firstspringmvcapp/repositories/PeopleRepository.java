@@ -1,18 +1,18 @@
 package com.firstspringmvcapp.repositories;
 
 
+import com.firstspringmvcapp.models.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-import com.firstspringmvcapp.models.Person;
 
 import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface PeopleRepository extends JpaRepository<Person, Integer> {
-    List<Person> findByIdNotIn(List<Integer> ids);
+public interface PeopleRepository extends JpaRepository<User, Integer> {
+    List<User> findByIdNotIn(List<Integer> ids);
 
-    Optional<Person> findByName(String name);
+    Optional<User> findByName(String name);
 
-    Optional<Person> findByEmail(String email);
+    Optional<User> findByEmail(String email);
 }

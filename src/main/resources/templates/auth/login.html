@@ -5,11 +5,12 @@
     <title>Login page</title>
     <link rel="stylesheet" th:href="@{/css/buttons.css}">
     <link rel="stylesheet" th:href="@{/css/new_edit.css}">
+    <link rel="icon" th:href="@{/favicon.ico}">
 </head>
 <body>
 
 <form name="loginForm" method="POST" action="/process_login">
-<!--    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">-->
+    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
 
     <label for="email">Enter email:</label>
     <input type="text" name="username" id="email">

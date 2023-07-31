@@ -6,6 +6,7 @@
     <title>Person page!</title>
     <link rel="stylesheet" th:href="@{/css/buttons.css}">
     <link rel="stylesheet" th:href="@{/css/show.css}">
+    <link rel="icon" th:href="@{/favicon.ico}">
     <script th:src="@{/js/functions.js}"></script>
 </head>
 <body>
@@ -13,17 +14,17 @@
     <div id="info">
         <div>
             <div>
-                <img th:if="${profilePictureExists}"
-                     th:src="@{//localhost:9000/picture-bucket/{id}.png(id=${person.getId()})}"
+                <img th:if="${!user.getProfilePicturePath().equals('0.png')}"
+                     th:src="@{//localhost:9000/picture-bucket/{id}.png(id=${user.getId()})}"
                      width="360" height="360"
                      alt="user's profile picture">
-                <img th:unless="${profilePictureExists}"
+                <img th:unless="${!user.getProfilePicturePath().equals('0.png')}"
                      th:src="@{/pfp/0.png}"
                      width="360" height="360"
                      alt="user's profile picture">
                 <div>
                     <div>
-                        <form th:method="POST" th:action="@{/people/{id}/uploadForm(id=${person.getId()})}"
+                        <form th:method="POST" th:action="@{/people/{id}/uploadForm(id=${user.getId()})}"
                               enctype="multipart/form-data"
                               onsubmit="return validate(this);">
                             <label for="fileToUpload">change avatar</label>
@@ -36,51 +37,49 @@
                 <br>
                 <div>
                     id:
-                    <span th:text="${person.getId()}"></span>
+                    <span th:text="${user.getId()}"></span>
                 </div>
                 <br>
                 <div>
                     name:
-                    <span th:text="${person.getName()}"></span>
+                    <span th:text="${user.getName()}"></span>
                 </div>
                 <br>
                 <div>
                     age:
-                    <span th:text="${person.getAge()}"></span>
+                    <span th:text="${user.getAge()}"></span>
                 </div>
                 <br>
                 <div>
                     email:
-                    <span th:text="${person.getEmail()}"></span>
+                    <span th:text="${user.getEmail()}"></span>
                 </div>
                 <br>
             </div>
         </div>
 
-        <div>
-            <div th:if="${friends.size() > 0}">
-                Friend list:
-            </div>
+        <div th:if="${friends.size() > 0}">Friend list:</div>
+        <div th:if="${friends.size() > 0}" th:each="friend : ${friends}">
+            <a th:href="@{/people/{id}(id=${friend.getId()})}"
+               th:text="${friend.getName()} + ', ' + ${friend.getAge()}">user</a>
 
-            <div th:if="${friends.size() > 0}"
-                 th:each="friend : ${friends}">
-                <a th:href="@{/people/{id}(id=${friend.getId()})}"
-                   th:text="${friend.getName()} + ', ' + ${friend.getAge()}">user</a>
-                <form style="display: inline-block"
-                      th:method="DELETE"
-                      th:action="@{/people/{id}/addFriend(id=${person.getId()}, friendId=${friend.getId()})}">
-                    &emsp;
-                    <a th:href="@{/people/{id}(id=${person.getId()})}"
+            <form style="display: inline-block"
+                  th:method="DELETE"
+                  th:action="@{/people/{id}/friends(id=${user.getId()}, friendId=${friend.getId()})}"
+                  th:object="${user}">
+                &emsp;
+                <div th:object="${friend}">
+                    <a th:href="@{/people/{id}(id=${user.getId()})}"
                        onclick="this.closest('form').submit();return false;">(Delete friend)</a>
-                </form>
-                <br>
-            </div>
+                </div>
+            </form>
+            <br>
         </div>
     </div>
 
     <div th:if="${availableFriends.size() != 0}">
         <br>
-        <form th:method="PATCH" th:action="@{/people/{id}/addFriend(id=${person.getId()})}">
+        <form th:method="POST" th:action="@{/people/{id}/friends(id=${user.getId()})}">
             <div id="labelFriend">
                 <label for="addFriend">Add friend: </label>
                 <select class="custom-select" th:object="${friend}" th:field="*{id}" id="addFriend">
@@ -95,16 +94,14 @@
     </div>
 
     <br>
-    <a class="button-30" role="button" th:href="@{/people/{id}/edit(id=${person.getId()})}">Edit this person</a>
+    <a class="button-30" role="button" th:href="@{/people/{id}/edit(id=${user.getId()})}">Edit this user</a>
 
-    <form th:method="DELETE" th:action="@{/people/{id}(id=${person.getId()})}"
+    <form th:method="DELETE" th:action="@{/people/{id}(id=${user.getId()})}"
           onsubmit="alert('Currently only admin can delete people!'); return false;">
-<!--        todo - make this working -->
+        <!--        todo - make this working -->
         <br>
-        <input class="button-24" type="submit" value="Delete person">
+        <input class="button-24" type="submit" value="Delete user">
     </form>
-
-
 </div>
 
 <hr>

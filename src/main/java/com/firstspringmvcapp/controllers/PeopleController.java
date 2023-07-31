@@ -1,5 +1,12 @@
 package com.firstspringmvcapp.controllers;
 
+import com.firstspringmvcapp.dto.UserDto;
+import com.firstspringmvcapp.models.User;
+import com.firstspringmvcapp.services.PeopleService;
+import com.firstspringmvcapp.services.MinioFileService;
+import com.firstspringmvcapp.util.PersonErrorResponse;
+import com.firstspringmvcapp.util.PersonValidator;
+import com.firstspringmvcapp.util.UserNotFoundException;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,12 +17,6 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import com.firstspringmvcapp.models.Person;
-import com.firstspringmvcapp.services.PeopleService;
-import com.firstspringmvcapp.util.MinioFileHandler;
-import com.firstspringmvcapp.util.PersonErrorResponse;
-import com.firstspringmvcapp.util.PersonNotFoundException;
-import com.firstspringmvcapp.util.PersonValidator;
 
 @Controller
 @RequestMapping("/people")
@@ -37,55 +38,53 @@ public class PeopleController {
 
     @GetMapping("/{id}")
     public String show(@PathVariable("id") int id, Model model,
-                       @ModelAttribute("friend") Person friend,
+                       @ModelAttribute("friend") User friend,
                        HttpServletResponse servletResponse) {
-        servletResponse.addHeader("Pragma-directive", "no-cache");
-        servletResponse.addHeader("Cache-directive", "no-cache");
         servletResponse.addHeader("Cache-control", "no-cache");
         servletResponse.addHeader("Pragma", "no-cache");
         servletResponse.addHeader("Expires", "0");
-        Person person = peopleService.findOne(id);
+        User user = peopleService.findOne(id);
 
-        model.addAttribute("person", person);
+        model.addAttribute("user", user);
         model.addAttribute("friends", peopleService.findFriends(id));
         model.addAttribute("availableFriends", peopleService.findAvailableFriends(id));
-        model.addAttribute("profilePictureExists", MinioFileHandler.checkExistence("picture-bucket", id + ".png"));
         return "people/show";
     }
 
     @GetMapping("/new")
-    public String newPerson(@ModelAttribute("person") Person person) {
+    public String newPerson(@ModelAttribute("userDto") UserDto userDto) {
         return "people/new";
     }
 
     @PostMapping()
-    public String createPerson(@ModelAttribute("person") @Valid Person person,
+    public String createPerson(@ModelAttribute("userDto") @Valid UserDto userDto,
                                BindingResult bindingResult) {
-        personValidator.validate(person, bindingResult);
+        personValidator.validate(userDto, bindingResult);
 
         if (bindingResult.hasErrors()) {
             return "people/new";
         }
 
-        peopleService.save(person);
+        User user = peopleService.userDtoToUser(userDto);
+        peopleService.save(user);
         return "redirect:/people";
     }
 
     @GetMapping("/{id}/edit")
     public String editPerson(Model model, @PathVariable("id") int id) {
-        model.addAttribute("person", peopleService.findOne(id));
+        model.addAttribute("user", peopleService.findOne(id));
 
         return "people/edit";
     }
 
     @PatchMapping("/{id}")
-    public String updatePerson(@ModelAttribute("person") @Valid Person person, BindingResult bindingResult,
+    public String updatePerson(@ModelAttribute("user") @Valid User user, BindingResult bindingResult,
                                @PathVariable("id") int id) {
         if (bindingResult.hasErrors()) {
             return "people/edit";
         }
 
-        peopleService.update(id, person);
+        peopleService.update(id, user);
         return "redirect:/people";
     }
 
@@ -95,14 +94,16 @@ public class PeopleController {
         return "redirect:/people";
     }
 
-    @PatchMapping("/{id}/addFriend")
-    public String addFriend(@PathVariable("id") int personId, @ModelAttribute("friend") Person friend) {
-        peopleService.addFriendById(personId, friend.getId());
+    @PostMapping("/{id}/friends")
+    public String addFriend(@PathVariable("id") int userId,
+                            @ModelAttribute("friend") User friend) {
+        peopleService.addFriendById(userId, friend.getId());
         return "redirect:/people/{id}";
     }
 
-    @DeleteMapping("/{id}/addFriend")
-    public String deleteFriend(@PathVariable("id") int personId, @RequestParam("friendId") int friendId) {
+    @DeleteMapping("/{id}/friends")
+    public String deleteFriend(@PathVariable("id") int personId,
+                               @RequestParam("friendId") int friendId) {
         peopleService.removeFriendById(personId, friendId);
         return "redirect:/people/{id}";
     }
@@ -113,14 +114,5 @@ public class PeopleController {
         peopleService.uploadProfilePicture(file, personId);
 
         return "redirect:/people/{id}";
-    }
-
-    @ExceptionHandler
-    private ResponseEntity<PersonErrorResponse> handleException(PersonNotFoundException e) {
-        PersonErrorResponse response = new PersonErrorResponse(
-                "Person with this id wasn't found!", System.currentTimeMillis()
-        );
-
-        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
 }

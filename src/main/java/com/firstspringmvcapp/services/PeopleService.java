@@ -1,142 +1,155 @@
 package com.firstspringmvcapp.services;
 
+import com.firstspringmvcapp.dto.UserDto;
+import com.firstspringmvcapp.models.User;
+import com.firstspringmvcapp.repositories.PeopleRepository;
+import com.firstspringmvcapp.util.Role;
+import com.firstspringmvcapp.util.UserNotFoundException;
 import org.hibernate.Hibernate;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import com.firstspringmvcapp.models.Person;
-import com.firstspringmvcapp.repositories.PeopleRepository;
-import com.firstspringmvcapp.util.MinioFileHandler;
-import com.firstspringmvcapp.util.PersonNotFoundException;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
 public class PeopleService {
+
     private final PeopleRepository peopleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final ModelMapper modelMapper;
+    private final MinioFileService minioFileService;
 
     @Autowired
-    public PeopleService(PeopleRepository peopleRepository, PasswordEncoder passwordEncoder) {
+    public PeopleService(PeopleRepository peopleRepository, PasswordEncoder passwordEncoder, ModelMapper modelMapper,
+                         MinioFileService minioFileService) {
         this.peopleRepository = peopleRepository;
         this.passwordEncoder = passwordEncoder;
+        this.modelMapper = modelMapper;
+        this.minioFileService = minioFileService;
     }
 
-    public List<Person> findAll() {
-        List<Person> people = peopleRepository.findAll().stream().sorted(
-                (p1, p2) -> p1.getName().compareToIgnoreCase(p2.getName())
-        ).collect(Collectors.toList());
-        return people;
+    public List<User> findAll() {
+        return peopleRepository.findAll().stream()
+                .sorted((p1, p2) -> p1.getName().compareToIgnoreCase(p2.getName()))
+                .toList();
     }
 
-    public Person findOne(int id) {
-        return peopleRepository.findById(id).orElseThrow(PersonNotFoundException::new);
+    public User findOne(int id) {
+        return peopleRepository.findById(id).orElseThrow(() ->
+                new UserNotFoundException("User wasn't found by id"));
     }
 
-    public Person findByEmail(String email) {
-        return peopleRepository.findByEmail(email).orElse(null);
+    public Optional<User> findByEmail(String email) {
+        return peopleRepository.findByEmail(email);
     }
 
-    public Set<Person> findFriends(int id) {
-        Person person = peopleRepository.getOne(id);
+    public Set<User> findFriends(int id) {
+        User user = peopleRepository.getOne(id);
 
-        Hibernate.initialize(person.getFriends());
-        Hibernate.initialize(person.getFriendOf());
+        Hibernate.initialize(user.getFriends());
+        Hibernate.initialize(user.getFriendOf());
 
-        Set<Person> friendList = person.getFriends();
-        Set<Person> friendsOf = person.getFriendOf();
-
+        Set<User> friendList = user.getFriends();
+        Set<User> friendsOf = user.getFriendOf();
         friendList.addAll(friendsOf);
+
         return friendList;
     }
 
-    public List<Person> findAvailableFriends(int id) {
+    public List<User> findAvailableFriends(int id) {
         List<Integer> availableFriendsIds = findFriends(id)
                 .stream()
-                .map(Person::getId)
+                .map(User::getId)
                 .collect(Collectors.toList());
         availableFriendsIds.add(id);
 
-        return peopleRepository.findByIdNotIn(availableFriendsIds).stream().sorted(
-                (p1, p2) -> p1.getName().compareToIgnoreCase(p2.getName())
-        ).collect(Collectors.toList());
+        return peopleRepository.findAll()
+                .stream()
+                .filter(user -> !availableFriendsIds.contains(user.getId()))
+                .sorted((p1, p2) -> p1.getName().compareToIgnoreCase(p2.getName()))
+                .toList();
     }
 
     @Transactional
-    public void save(Person person) {
-        enrichPerson(person);
-        peopleRepository.save(person);
+    public void save(User user) {
+        enrichPerson(user);
+        peopleRepository.save(user);
 
-        System.out.println("person " + person + "was successfully created");
+        System.out.println("user " + user + "was successfully created");
     }
 
     @Transactional
-    public void update(int id, Person newPerson) {
-        final Person person = peopleRepository.getOne(id);
-        newPerson.setId(id);
-        newPerson.setProfilePicturePath(person.getProfilePicturePath());
-        newPerson.setFriends(person.getFriends());
-        newPerson.setFriendOf(person.getFriendOf());
-        peopleRepository.save(newPerson);
+    public void update(int id, User newUser) {
+        final User user = peopleRepository.getOne(id);
+        newUser.setId(id);
+        newUser.setProfilePicturePath(user.getProfilePicturePath());
+        newUser.setFriends(user.getFriends());
+        newUser.setFriendOf(user.getFriendOf());
+        peopleRepository.save(newUser);
 
-        System.out.println("person " + person + "was successfully changed to " + newPerson);
+        System.out.println("user " + user + "was successfully changed to " + newUser);
     }
 
     @Transactional
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public void delete(int id) {
-        final Person toBeDeleted = peopleRepository.getOne(id);
+        final User toBeDeleted = peopleRepository.getOne(id);
         peopleRepository.deleteById(id);
-        MinioFileHandler.remove("picture-bucket", id + ".png");
+        minioFileService.remove("picture-bucket", id + ".png");
 
         System.out.println("person " + toBeDeleted + "was successfully deleted");
     }
 
     @Transactional
-    public void addFriendById(int personId, int friendId) {
-        Person person = findOne(personId);
-        Person friend = findOne(friendId);
+    public void addFriendById(int userId, int friendId) {
+        User user = peopleRepository.findById(userId).get();
+        User friend = peopleRepository.findById(friendId).get();
 
-        person.getFriends().add(friend);
+        user.getFriends().add(friend);
     }
 
     @Transactional
-    public void removeFriendById(int personId, int friendId) {
-        Person person = findOne(personId);
-        Person friend = findOne(friendId);
+    public void removeFriendById(int userId, int friendId) {
+        User user = findOne(userId);
+        User friend = findOne(friendId);
 
-        person.getFriends().remove(friend);
-        friend.getFriends().remove(person);
+        user.getFriends().remove(friend);
+        friend.getFriends().remove(user);
     }
 
     @Transactional
     public void uploadProfilePicture(MultipartFile file, int personId) {
-        try {
-            ByteArrayInputStream bais = new ByteArrayInputStream(file.getBytes());
-            MinioFileHandler.upload("picture-bucket", personId + ".png", bais);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        String pictureName = personId + ".png";
+        minioFileService.upload("picture-bucket", pictureName, file);
 
-        Person updatedPerson = peopleRepository.getOne(personId);
-        if (!updatedPerson.getProfilePicturePath().equals(personId + ".png")) {
-            updatedPerson.setProfilePicturePath(personId + ".png");
+        User updatedUser = peopleRepository.getOne(personId);
+        if (!(pictureName).equals(updatedUser.getProfilePicturePath())) {
+            updatedUser.setProfilePicturePath(pictureName);
         }
     }
 
-    private void enrichPerson(Person person) {
-        person.setProfilePicturePath("0.png");
-        person.setRole("ROLE_USER");
-        person.setPassword(passwordEncoder.encode(person.getPassword()));
-        person.setCreatedAt(LocalDateTime.now());
+    private void enrichPerson(User user) {
+        user.setProfilePicturePath("0.png");
+        user.setRole(Role.ROLE_USER);
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        user.setCreatedAt(LocalDateTime.now());
+    }
+
+    public User userDtoToUser(UserDto userDTO) {
+        return modelMapper.map(userDTO, User.class);
+    }
+
+    public UserDto userToUserDto(User user) {
+        return modelMapper.map(user, UserDto.class);
     }
 }

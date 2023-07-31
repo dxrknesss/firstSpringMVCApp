@@ -4,9 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create new person!</title>
+    <title>Create new user!</title>
     <link rel="stylesheet" th:href="@{/css/buttons.css}">
     <link rel="stylesheet" th:href="@{/css/new_edit.css}">
+    <link rel="icon" th:href="@{/favicon.ico}">
     <script th:src="@{/js/functions.js}"></script>
 </head>
 <body>
@@ -15,7 +16,7 @@
         name="form"
         th:method="POST"
         th:action="@{/people}"
-        th:object="${person}">
+        th:object="${userDto}">
     <label for="name">Name</label>
     <input type="text" th:field="*{name}" th:placeholder="Name" id="name" >
     <div style="color:red" th:if="${#fields.hasErrors('name')}" th:errors="*{name}" >NAME_ERR</div>
@@ -31,7 +32,7 @@
     <div style="color:red" th:if="${#fields.hasErrors('email')}" th:errors="*{email}">EMAIL_ERR</div>
 
     <br>
-    <input class="button-17" type="submit" value="Create person!" onclick="validateFormAge()">
+    <input class="button-17" type="submit" value="Create user!" onclick="validateFormAge()">
 </form>
 
 <hr>

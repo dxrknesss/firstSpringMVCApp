@@ -1,12 +1,14 @@
 spring.mvc.hiddenmethod.filter.enabled=true
 
 spring.datasource.driver-class-name=org.postgresql.Driver
-spring.datasource.url=jdbc:postgresql://postgres:5432/FirstSpringMVCAppDatabase
-spring.datasource.username=postgres
-spring.datasource.password=root
+spring.datasource.url=jdbc:postgresql://postgres:5432/
+spring.datasource.username=
+spring.datasource.password=
 
 spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
 
 server.port=8080
 
-jwt_secret=SECRET
+access_key=
+secret_key=
+minio_url=

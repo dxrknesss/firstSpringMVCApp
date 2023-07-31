@@ -1,5 +1,6 @@
 package com.firstspringmvcapp.security;
 
+import com.firstspringmvcapp.services.PersonDetailsService;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -9,12 +10,12 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.authentication.AuthenticationManagerFactoryBean;
-import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import com.firstspringmvcapp.services.PersonDetailsService;
+import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.security.web.access.AccessDeniedHandlerImpl;
+import org.springframework.security.web.authentication.*;
 
 @Configuration
 @EnableMethodSecurity
@@ -22,7 +23,6 @@ public class SecurityConfig {
 
     private final PersonDetailsService personDetailsService;
     private final BeanFactory beanFactory;
-    //private final JWTFilter jwtFilter;
 
     @Autowired
     public SecurityConfig(PersonDetailsService personDetailsService, BeanFactory beanFactory) {
@@ -47,22 +47,20 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http.csrf(c -> c.disable()).authorizeHttpRequests(authorize -> authorize
+        http.authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/auth/admin").hasRole("ADMIN")
-                        .requestMatchers("/auth/login", "/error", "/auth/registration", "/css/**", "/js/**", "/api/**").permitAll()
+                        .requestMatchers("/auth/login", "/error", "/auth/registration", "/css/**", "/js/**", "/api/**", "/favicon.ico").permitAll()
                         .anyRequest().hasAnyRole("USER", "ADMIN"))
                 .formLogin(form -> form
                         .loginPage("/auth/login")
                         .loginProcessingUrl("/process_login")
                         .permitAll()
-                        .defaultSuccessUrl("/people", true)
-                        .failureUrl("/auth/login?error"))
+                        .successHandler(authenticationSuccessHandler())
+                        .failureHandler(authenticationFailureHandler()))
+                .exceptionHandling(e -> e.accessDeniedHandler(accessDeniedHandler()))
                 .logout(form -> form
                         .logoutUrl("/logout")
                         .logoutSuccessUrl("/auth/login"));
-                //.sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
-
-        //http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -74,5 +72,17 @@ public class SecurityConfig {
         factoryBean.setBeanFactory(beanFactory);
 
         return factoryBean.getObject();
+    }
+
+    private AuthenticationSuccessHandler authenticationSuccessHandler() {
+        return new SimpleUrlAuthenticationSuccessHandler("/people");
+    }
+
+    private AuthenticationFailureHandler authenticationFailureHandler() {
+        return new ForwardAuthenticationFailureHandler("/auth/login?error");
+    }
+
+    private AccessDeniedHandler accessDeniedHandler() {
+        return new AccessDeniedHandlerImpl();
     }
 }

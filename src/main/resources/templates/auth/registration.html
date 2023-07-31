@@ -7,6 +7,7 @@
     <title>Sign up page</title>
     <link rel="stylesheet" th:href="@{/css/buttons.css}">
     <link rel="stylesheet" th:href="@{/css/new_edit.css}">
+    <link rel="icon" th:href="@{/favicon.ico}">
     <script th:src="@{/js/functions.js}"></script>
 </head>
 <body>
@@ -15,7 +16,7 @@
         name="form"
         th:method="POST"
         th:action="@{/auth/registration}"
-        th:object="${personDTO}">
+        th:object="${userDTO}">
     <label for="username">Name</label>
     <input type="text" th:field="*{name}" th:placeholder="Name" id="username">
     <div style="color:red" th:if="${#fields.hasErrors('name')}" th:errors="*{name}">NAME_ERR</div>

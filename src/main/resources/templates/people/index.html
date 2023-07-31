@@ -6,21 +6,22 @@
     <title>Main page!</title>
     <link rel="stylesheet" th:href="@{/css/index.css}">
     <link rel="stylesheet" th:href="@{/css/buttons.css}">
+    <link rel="icon" th:href="@{/favicon.ico}">
 </head>
 <body>
 
 <div th:if="${people.size() > 0}">
     <div id="peopleList">
-        <div th:each="person : ${people}">
-            <a th:href="@{/people/{id}(id=${person.getId()})}"
-               th:text="${person.getName()} + ', ' + ${person.getAge()}">user</a>
+        <div th:each="user : ${people}">
+            <a th:href="@{/people/{id}(id=${user.getId()})}"
+               th:text="${user.getName()} + ', ' + ${user.getAge()}">user</a>
         </div>
     </div>
 
     <hr>
 </div>
 
-<a href="/people/new" class="button-3" role="button">Create new person</a>
+<a href="/people/new" class="button-3" role="button">Create new user</a>
 <form th:action="@{/logout}" th:method="POST">
     <input type="submit" class="button-24" style="font-size: 21px; display: table; margin-top: inherit" value="Log out">
 </form>

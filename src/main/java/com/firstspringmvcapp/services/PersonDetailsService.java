@@ -1,13 +1,13 @@
 package com.firstspringmvcapp.services;
 
+import com.firstspringmvcapp.models.User;
+import com.firstspringmvcapp.repositories.PeopleRepository;
+import com.firstspringmvcapp.security.PersonDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-import com.firstspringmvcapp.models.Person;
-import com.firstspringmvcapp.repositories.PeopleRepository;
-import com.firstspringmvcapp.security.PersonDetails;
 
 import java.util.Optional;
 
@@ -23,12 +23,12 @@ public class PersonDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        Optional<Person> person = peopleRepository.findByEmail(email);
+        Optional<User> user = peopleRepository.findByEmail(email);
 
-        if (person.isEmpty()) {
+        if (user.isEmpty()) {
             throw new UsernameNotFoundException("Invalid email!");
         }
 
-        return new PersonDetails(person.get());
+        return new PersonDetails(user.get());
     }
 }

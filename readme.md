@@ -44,8 +44,8 @@ After that, you're good to go! Go to ``localhost:8080`` and have fun!
 You can also use this app as a REST API.  
 In order to do this, you will need to query:
 1. GET query to ``localhost:8080/api/people`` will display all the people
-2. GET query to ``localhost:8080/api/people/{id}`` - you should substitute id with id of the person you want to display
-3. POST query to ``localhost:8080/api/people`` will create a new person!  
+2. GET query to ``localhost:8080/api/people/{id}`` - you should substitute id with id of the user you want to display
+3. POST query to ``localhost:8080/api/people`` will create a new user!  
 **Required fields:**
    * Name (2-30 characters long)
    * Email 

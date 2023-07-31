@@ -1,10 +1,10 @@
 package com.firstspringmvcapp.security;
 
+import com.firstspringmvcapp.models.User;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-import com.firstspringmvcapp.models.Person;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -12,26 +12,26 @@ import java.util.Collections;
 public class PersonDetails implements UserDetails {
 
     @Getter
-    private final Person person;
+    private final User user;
 
-    public PersonDetails(Person person) {
-        this.person = person;
+    public PersonDetails(User user) {
+        this.user = user;
     }
 
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.singletonList(new SimpleGrantedAuthority(person.getRole()));
+        return Collections.singletonList(new SimpleGrantedAuthority(user.getRole().toString()));
     }
 
     @Override
     public String getPassword() {
-        return person.getPassword();
+        return user.getPassword();
     }
 
     @Override
     public String getUsername() {
-        return person.getEmail();
+        return user.getEmail();
     }
 
     @Override
